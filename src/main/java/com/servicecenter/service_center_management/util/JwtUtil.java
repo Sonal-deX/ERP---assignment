@@ -1,5 +1,6 @@
 package com.servicecenter.service_center_management.util;
 
+import com.servicecenter.service_center_management.entity.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,8 +49,9 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
     
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(User userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("role", userDetails.getRole().name());
         return createToken(claims, userDetails.getUsername());
     }
     

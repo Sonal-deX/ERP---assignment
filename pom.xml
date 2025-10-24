@@ -67,6 +67,20 @@
             <scope>runtime</scope>
         </dependency>
         
+        <!-- Swagger/OpenAPI Documentation -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+        
+        <!-- Lombok (for other entities) -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        
         <!-- Development Tools -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

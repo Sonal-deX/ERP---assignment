@@ -1,9 +1,23 @@
 package com.servicecenter.service_center_management.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Authentication response with JWT token and user details")
 public class AuthResponse {
+    
+    @Schema(description = "JWT authentication token", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
     private String token;
+    
+    @Schema(description = "User email address", example = "customer@example.com")
     private String email;
+    
+    @Schema(description = "User role", example = "CUSTOMER")
     private String role;
+    
+    @Schema(description = "User's first name", example = "John")
     private String firstName;
+    
+    @Schema(description = "User's last name", example = "Doe")
     private String lastName;
     
     public AuthResponse(String token, String email, String role, String firstName, String lastName) {

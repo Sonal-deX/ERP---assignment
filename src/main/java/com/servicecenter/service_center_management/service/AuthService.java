@@ -8,9 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.Random;
 
@@ -39,22 +41,23 @@ public class AuthService {
     private String adminEmail;
     
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        if (!user.isActive()) {
-            throw new RuntimeException("Account not activated");
-        }
-        
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.getRole().name().equalsIgnoreCase(request.getRole())) {
+            throw new RuntimeException("Invalid role for this user");
+        }
+
+        String token = jwtUtil.generateToken(user);
+        String[] nameParts = user.getFullName() != null ? user.getFullName().split(" ", 2) : new String[]{"", ""};
+        String firstName = nameParts.length > 0 ? nameParts[0] : "";
+        String lastName = nameParts.length > 1 ? nameParts[1] : "";
         
-        UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
-        String token = jwtUtil.generateToken(userDetails);
-        
-        return new AuthResponse(token, user.getEmail(), user.getRole().name(), 
-                               user.getFirstName(), user.getLastName());
+        return new AuthResponse(token, user.getEmail(), user.getRole().name(), firstName, lastName);
     }
     
     public ApiResponse register(RegisterRequest request) {
@@ -83,29 +86,28 @@ public class AuthService {
         User user = new User();
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
+        user.setFullName(request.getFirstName() + " " + request.getLastName());
         user.setRole(User.Role.valueOf(role));
-        user.setOtpCode(generateOtp());
-        user.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
+        user.setOtp(generateOtp());
+        user.setOtpGeneratedTime(LocalDateTime.now().plusMinutes(10));
         
         userRepository.save(user);
-        emailService.sendOtp(email, user.getOtpCode());
+        emailService.sendOtp(email, user.getOtp());
         
         return new ApiResponse(true, "Registration successful. OTP sent to: " + email);
     }
     
     public ApiResponse verifyOtp(VerifyOtpRequest request) {
-        User user = userRepository.findByOtpCode(request.getOtpCode())
+        User user = userRepository.findByOtp(request.getOtpCode())
                 .orElseThrow(() -> new RuntimeException("Invalid OTP"));
         
-        if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+        if (user.getOtpGeneratedTime().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("OTP expired");
         }
         
-        user.setActive(true);
-        user.setOtpCode(null);
-        user.setOtpExpiry(null);
+        user.setVerified(true);
+        user.setOtp(null);
+        user.setOtpGeneratedTime(null);
         userRepository.save(user);
         
         return new ApiResponse(true, "Account verified successfully");
@@ -121,10 +123,9 @@ public class AuthService {
         User employee = new User();
         employee.setEmail(request.getEmail());
         employee.setPassword(passwordEncoder.encode(password));
-        employee.setFirstName(request.getFirstName());
-        employee.setLastName(request.getLastName());
+        employee.setFullName(request.getFirstName() + " " + request.getLastName());
         employee.setRole(User.Role.EMPLOYEE);
-        employee.setActive(true);
+        employee.setVerified(true);
         
         userRepository.save(employee);
         emailService.sendEmployeePassword(request.getEmail(), password);

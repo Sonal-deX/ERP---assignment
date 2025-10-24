@@ -26,4 +26,12 @@ public class EmailService {
         message.setText("Your login credentials:\nEmail: " + toEmail + "\nPassword: " + password);
         mailSender.send(message);
     }
+    
+    public void sendCredentials(String toEmail, String password) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("Your Account Credentials");
+        message.setText("Your account has been created. Your password is: " + password);
+        mailSender.send(message);
+    }
 }

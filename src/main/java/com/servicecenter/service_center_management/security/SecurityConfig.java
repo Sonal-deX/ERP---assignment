@@ -49,7 +49,11 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/verify-otp").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                .requestMatchers("/api/customer/**").hasAuthority("CUSTOMER")
+                .requestMatchers("/api/work-orders/**").hasAuthority("EMPLOYEE")
+                .requestMatchers("/api/time-logs/**").hasAuthority("EMPLOYEE")
                 .anyRequest().authenticated()
             );
         
