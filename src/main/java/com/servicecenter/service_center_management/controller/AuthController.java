@@ -24,7 +24,7 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(
         summary = "User login",
-        description = "Authenticates a user (CUSTOMER, EMPLOYEE, or ADMIN) and returns a JWT token. The role must match the user's registered role."
+        description = "Authenticates a user with email and password, and returns a JWT token along with user details. The user's role is automatically retrieved from the database."
     )
     @ApiResponses(value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -34,7 +34,7 @@ public class AuthController {
         ),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "400",
-            description = "Invalid credentials or role mismatch",
+            description = "Invalid credentials",
             content = @Content(schema = @Schema(implementation = ApiResponse.class))
         )
     })

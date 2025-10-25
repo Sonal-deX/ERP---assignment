@@ -48,10 +48,6 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!user.getRole().name().equalsIgnoreCase(request.getRole())) {
-            throw new RuntimeException("Invalid role for this user");
-        }
-
         String token = jwtUtil.generateToken(user);
         String[] nameParts = user.getFullName() != null ? user.getFullName().split(" ", 2) : new String[]{"", ""};
         String firstName = nameParts.length > 0 ? nameParts[0] : "";
