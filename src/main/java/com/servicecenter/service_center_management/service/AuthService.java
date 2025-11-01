@@ -142,4 +142,42 @@ public class AuthService {
         }
         return password.toString();
     }
+
+    public ApiResponse forgotPassword(ForgotPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("No such email found"));
+
+        // Generate OTP
+        String otp = generateOtp();
+        user.setOtp(otp);
+        user.setOtpGeneratedTime(LocalDateTime.now().plusMinutes(5));
+        userRepository.save(user);
+
+        // Send OTP via email
+        emailService.sendOtp(request.getEmail(), otp);
+
+        return new ApiResponse(true, "OTP sent successfully");
+    }
+
+    public ApiResponse resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("No such email found"));
+
+        // Verify OTP
+        if (user.getOtp() == null || !user.getOtp().equals(request.getOtp())) {
+            throw new RuntimeException("Invalid or expired OTP");
+        }
+
+        if (user.getOtpGeneratedTime().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Invalid or expired OTP");
+        }
+
+        // Update password and clear OTP
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setOtp(null);
+        user.setOtpGeneratedTime(null);
+        userRepository.save(user);
+
+        return new ApiResponse(true, "Password reset successfully");
+    }
 }

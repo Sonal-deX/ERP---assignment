@@ -1,6 +1,12 @@
 package com.servicecenter.service_center_management.controller;
 
-import com.servicecenter.service_center_management.dto.*;
+import com.servicecenter.service_center_management.dto.ApiResponse;
+import com.servicecenter.service_center_management.dto.AuthResponse;
+import com.servicecenter.service_center_management.dto.ForgotPasswordRequest;
+import com.servicecenter.service_center_management.dto.LoginRequest;
+import com.servicecenter.service_center_management.dto.RegisterRequest;
+import com.servicecenter.service_center_management.dto.ResetPasswordRequest;
+import com.servicecenter.service_center_management.dto.VerifyOtpRequest;
 import com.servicecenter.service_center_management.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -95,6 +101,28 @@ public class AuthController {
     public ResponseEntity<ApiResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
         try {
             ApiResponse response = authService.verifyOtp(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            ApiResponse response = authService.forgotPassword(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(404)
+                    .body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            ApiResponse response = authService.resetPassword(request);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
