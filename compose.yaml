@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: service_center_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: RootPass@2024
+      MYSQL_DATABASE: service_center_db
+      MYSQL_USER: serviceuser
+      MYSQL_PASSWORD: ServicePass@2024
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pRootPass@2024"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Spring Boot Backend Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: service_center_backend
+    restart: unless-stopped
+    environment:
+      # Override database configuration for Docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/service_center_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: serviceuser
+      SPRING_DATASOURCE_PASSWORD: ServicePass@2024
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      
+      # Server configuration
+      SERVER_PORT: 9090
+      
+      # JPA configuration
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MySQLDialect
+      
+      # JWT configuration
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      JWT_EXPIRATION: 86400000
+      
+      # Email configuration
+      SPRING_MAIL_HOST: smtp.gmail.com
+      SPRING_MAIL_PORT: 587
+      SPRING_MAIL_USERNAME: lasinthaattanayake@gmail.com
+      SPRING_MAIL_PASSWORD: drfppabtiwoyuohh
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+      
+      # Admin configuration
+      ADMIN_PREDEFINED_EMAIL: lasinthaattanayake@gmail.com
+    ports:
+      - "9090:9090"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app_network
+    volumes:
+      - ./logs:/app/logs
+
+  # Next.js Frontend Service
+  frontend:
+    build:
+      context: ../asms-frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+    container_name: service_center_frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
+      NEXT_TELEMETRY_DISABLED: 1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge
+
