@@ -4,6 +4,7 @@ import com.servicecenter.service_center_management.dto.CreateWorkOrderRequest;
 import com.servicecenter.service_center_management.dto.UpdateWorkOrderProgressRequest;
 import com.servicecenter.service_center_management.dto.UpdateWorkOrderStatusRequest;
 import com.servicecenter.service_center_management.dto.WorkOrderResponse;
+import com.servicecenter.service_center_management.dto.WorkOrderSummaryResponse;
 import com.servicecenter.service_center_management.entity.User;
 import com.servicecenter.service_center_management.entity.Vehicle;
 import com.servicecenter.service_center_management.entity.WorkOrder;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
 
 @Service
 public class WorkOrderService {
@@ -186,6 +188,42 @@ public class WorkOrderService {
         response.setUpdatedAt(workOrder.getUpdatedAt());
 
         return response;
+    }
+
+    @Transactional(readOnly = true)
+    public WorkOrderSummaryResponse getTodayWorkOrderSummary(String userEmail) {
+        User employee = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (employee.getRole() != User.Role.EMPLOYEE) {
+            throw new AccessDeniedException("Only employees can view assigned work orders");
+        }
+
+        LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+
+        // Filter work orders assigned to this employee with estimated completion today
+        List<WorkOrder> todayWorkOrders = workOrderRepository.findByAssignedEmployeeId(employee.getId())
+                .stream()
+                .filter(wo -> wo.getEstimatedCompletion() != null &&
+                        !wo.getEstimatedCompletion().isBefore(startOfDay) &&
+                        wo.getEstimatedCompletion().isBefore(endOfDay))
+                .collect(Collectors.toList());
+
+        int total = Math.toIntExact(todayWorkOrders.size());
+        int inProgress = Math.toIntExact(todayWorkOrders.stream()
+                .filter(wo -> wo.getStatus() == WorkOrder.WorkOrderStatus.IN_PROGRESS)
+                .count());
+        int completed = Math.toIntExact(todayWorkOrders.stream()
+                .filter(wo -> wo.getStatus() == WorkOrder.WorkOrderStatus.COMPLETED)
+                .count());
+
+        WorkOrderSummaryResponse summary = new WorkOrderSummaryResponse();
+        summary.setTotalToday(total);
+        summary.setInProgressToday(inProgress);
+        summary.setCompletedToday(completed);
+
+        return summary;
     }
 
     // Customer methods

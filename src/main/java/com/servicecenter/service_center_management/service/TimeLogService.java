@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -71,6 +72,28 @@ public class TimeLogService {
         return timeLogs.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Double getTodayTotalHours(String userEmail) {
+        User employee = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(23, 59, 59);
+
+        List<TimeLog> timeLogs = timeLogRepository.findByWorkOrderAssignedEmployeeIdAndLoggedAtBetween(
+                employee.getId(), startOfDay, endOfDay);
+
+        // Sum the durations in hours
+        double totalHours = 0.0;
+        for (TimeLog log : timeLogs) {
+            if (log.getStartTime() != null && log.getEndTime() != null) {
+                totalHours += Duration.between(log.getStartTime(), log.getEndTime()).toMinutes() / 60.0;
+            }
+        }
+        return totalHours;
     }
 
     @Transactional

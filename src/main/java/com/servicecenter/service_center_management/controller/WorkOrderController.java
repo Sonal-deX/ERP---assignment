@@ -4,6 +4,7 @@ import com.servicecenter.service_center_management.dto.ApiResponse;
 import com.servicecenter.service_center_management.dto.UpdateWorkOrderProgressRequest;
 import com.servicecenter.service_center_management.dto.UpdateWorkOrderStatusRequest;
 import com.servicecenter.service_center_management.dto.WorkOrderResponse;
+import com.servicecenter.service_center_management.dto.WorkOrderSummaryResponse;
 import com.servicecenter.service_center_management.service.WorkOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -262,6 +263,24 @@ public class WorkOrderController {
                         .body(new ApiResponse<>(false, e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+    
+    @GetMapping("/my-assigned/summary")
+    @Operation(summary = "Get today's work order summary", description = "Returns count of total, in-progress, and completed work orders for today for the authenticated employee.")
+    public ResponseEntity<ApiResponse<WorkOrderSummaryResponse>> getTodayWorkOrderSummary(
+            Authentication authentication) {
+        try {
+            String userEmail = authentication.getName();
+            WorkOrderSummaryResponse summary = workOrderService.getTodayWorkOrderSummary(userEmail);
+            return ResponseEntity
+                    .ok(new ApiResponse<>(true, "Today's work order summary retrieved successfully", summary));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiResponse<>(false, e.getMessage(), null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
