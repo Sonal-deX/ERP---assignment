@@ -56,6 +56,14 @@ public class TimeLogController {
         }
     }
 
+    @GetMapping("/today/hours")
+    @Operation(summary = "Get total hours logged today", description = "Get the total work hours logged today by the authenticated employee.")
+    public ResponseEntity<ApiResponse> getTodayTotalHours(Authentication authentication) {
+        String userEmail = authentication.getName();
+        Double totalHours = timeLogService.getTodayTotalHours(userEmail);
+        return ResponseEntity.ok(new ApiResponse(true, "Today's total hours retrieved successfully", totalHours));
+    }
+
     @PutMapping("/{id}")
     @Operation(
         summary = "Update time log",
