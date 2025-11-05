@@ -52,9 +52,9 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/refresh-token").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                        .requestMatchers("/api/customer/**").hasAuthority("CUSTOMER")
-                        .requestMatchers("/api/work-orders/**").hasAuthority("EMPLOYEE")
-                        .requestMatchers("/api/time-logs/**").hasAuthority("EMPLOYEE")
+                        .requestMatchers("/api/customer/**").hasAnyAuthority("CUSTOMER", "ADMIN")
+                        .requestMatchers("/api/work-orders/**").hasAnyAuthority("EMPLOYEE", "ADMIN")
+                        .requestMatchers("/api/time-logs/**").hasAnyAuthority("EMPLOYEE", "ADMIN")
                         .anyRequest().authenticated()
                 );
 

@@ -5,9 +5,11 @@ import com.servicecenter.service_center_management.dto.UpdateWorkOrderProgressRe
 import com.servicecenter.service_center_management.dto.UpdateWorkOrderStatusRequest;
 import com.servicecenter.service_center_management.dto.WorkOrderResponse;
 import com.servicecenter.service_center_management.dto.WorkOrderSummaryResponse;
+import com.servicecenter.service_center_management.entity.Appointment;
 import com.servicecenter.service_center_management.entity.User;
 import com.servicecenter.service_center_management.entity.Vehicle;
 import com.servicecenter.service_center_management.entity.WorkOrder;
+import com.servicecenter.service_center_management.repository.AppointmentRepository;
 import com.servicecenter.service_center_management.repository.UserRepository;
 import com.servicecenter.service_center_management.repository.VehicleRepository;
 import com.servicecenter.service_center_management.repository.WorkOrderRepository;
@@ -32,6 +34,9 @@ public class WorkOrderService {
 
     @Autowired
     private VehicleRepository vehicleRepository;
+
+    @Autowired
+    private AppointmentRepository appointmentRepository;
 
     @Transactional(readOnly = true)
     public List<WorkOrderResponse> getAvailableWorkOrders(String userEmail) {
@@ -239,12 +244,20 @@ public class WorkOrderService {
         Vehicle vehicle = vehicleRepository.findByIdAndCustomerId(request.getVehicleId(), customer.getId())
                 .orElseThrow(() -> new RuntimeException("Vehicle not found or does not belong to you"));
 
+        // Validate and fetch appointment if provided
+        Appointment appointment = null;
+        if (request.getAppointmentId() != null) {
+            appointment = appointmentRepository.findByIdAndCustomerId(request.getAppointmentId(), customer.getId())
+                    .orElseThrow(() -> new RuntimeException("Appointment not found or does not belong to you"));
+        }
+
         try {
             WorkOrder.WorkOrderType type = WorkOrder.WorkOrderType.valueOf(request.getType());
 
             WorkOrder workOrder = new WorkOrder();
             workOrder.setCustomer(customer);
             workOrder.setVehicle(vehicle);
+            workOrder.setAppointment(appointment); // Link appointment if provided
             workOrder.setType(type);
             workOrder.setTitle(request.getTitle());
             workOrder.setDescription(request.getDescription());

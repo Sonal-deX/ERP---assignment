@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 @Schema(description = "Request to create a work order")
 public class CreateWorkOrderRequest {
 
+    @Schema(description = "Appointment ID (optional, to link work order with an appointment)", example = "1")
+    private Long appointmentId;
+
     @Schema(description = "Vehicle ID", example = "1", required = true)
     @NotNull(message = "Vehicle ID is required")
     private Long vehicleId;
@@ -34,14 +37,23 @@ public class CreateWorkOrderRequest {
     public CreateWorkOrderRequest() {
     }
 
-    public CreateWorkOrderRequest(Long vehicleId, String type, String title, String description, 
+    public CreateWorkOrderRequest(Long appointmentId, Long vehicleId, String type, String title, String description, 
                                  BigDecimal estimatedCost, LocalDateTime estimatedCompletion) {
+        this.appointmentId = appointmentId;
         this.vehicleId = vehicleId;
         this.type = type;
         this.title = title;
         this.description = description;
         this.estimatedCost = estimatedCost;
         this.estimatedCompletion = estimatedCompletion;
+    }
+
+    public Long getAppointmentId() {
+        return appointmentId;
+    }
+
+    public void setAppointmentId(Long appointmentId) {
+        this.appointmentId = appointmentId;
     }
 
     public Long getVehicleId() {
