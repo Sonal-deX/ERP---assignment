@@ -49,41 +49,51 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         String token = jwtUtil.generateToken(user);
+        String refreshToken = jwtUtil.generateRefreshToken(user);
+        
+        // Store refresh token in database
+        user.setRefreshToken(refreshToken);
+        user.setRefreshTokenExpiry(LocalDateTime.now().plusDays(7));
+        userRepository.save(user);
+        
         String[] nameParts = user.getFullName() != null ? user.getFullName().split(" ", 2) : new String[]{"", ""};
         String firstName = nameParts.length > 0 ? nameParts[0] : "";
         String lastName = nameParts.length > 1 ? nameParts[1] : "";
         
-        return new AuthResponse(token, user.getEmail(), user.getRole().name(), firstName, lastName);
+        return new AuthResponse(token, refreshToken, user.getEmail(), user.getRole().name(), firstName, lastName);
     }
     
     public ApiResponse register(RegisterRequest request) {
         String role = request.getRole().toUpperCase();
         
-        if (!"ADMIN".equals(role) && !"CUSTOMER".equals(role)) {
-            return new ApiResponse(false, "Invalid role. Only ADMIN or CUSTOMER allowed");
+        // Only allow CUSTOMER registration through this endpoint
+        if ("ADMIN".equals(role)) {
+            return new ApiResponse(false, "Admin registration is not allowed through this endpoint. Please contact super admin.");
         }
         
-        String email;
-        if ("ADMIN".equals(role)) {
-            email = adminEmail;
-            if (userRepository.existsByEmail(email)) {
-                return new ApiResponse(false, "Admin already exists");
-            }
-        } else {
-            email = request.getEmail();
-            if (email == null || email.trim().isEmpty()) {
-                return new ApiResponse(false, "Email required for customer");
-            }
-            if (userRepository.existsByEmail(email)) {
-                return new ApiResponse(false, "Email already exists");
-            }
+        if (!"CUSTOMER".equals(role)) {
+            return new ApiResponse(false, "Invalid role. Only CUSTOMER allowed for registration");
+        }
+        
+        String email = request.getEmail();
+        if (email == null || email.trim().isEmpty()) {
+            return new ApiResponse(false, "Email required for customer");
+        }
+        if (userRepository.existsByEmail(email)) {
+            return new ApiResponse(false, "Email already exists");
         }
         
         User user = new User();
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFullName(request.getFirstName() + " " + request.getLastName());
-        user.setRole(User.Role.valueOf(role));
+        user.setRole(User.Role.CUSTOMER);
+        
+        // Set customer-specific fields
+        user.setPhone(request.getPhone());
+        user.setAddress(request.getAddress());
+        user.setDateOfBirth(request.getDateOfBirth());
+        
         user.setOtp(generateOtp());
         user.setOtpGeneratedTime(LocalDateTime.now().plusMinutes(10));
         
@@ -179,5 +189,66 @@ public class AuthService {
         userRepository.save(user);
 
         return new ApiResponse(true, "Password reset successfully");
+    }
+    
+    public AuthResponse refreshAccessToken(String refreshToken) {
+        // Validate refresh token format
+        if (!jwtUtil.validateRefreshToken(refreshToken)) {
+            throw new RuntimeException("Invalid refresh token");
+        }
+        
+        // Extract username from refresh token
+        String email = jwtUtil.extractUsername(refreshToken);
+        
+        // Find user by email
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Verify refresh token matches the one stored in database and is not expired
+        if (user.getRefreshToken() == null || !user.getRefreshToken().equals(refreshToken)) {
+            throw new RuntimeException("Invalid refresh token");
+        }
+        
+        if (user.getRefreshTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Refresh token has expired");
+        }
+        
+        // Generate new access token
+        String newAccessToken = jwtUtil.generateToken(user);
+        
+        String[] nameParts = user.getFullName() != null ? user.getFullName().split(" ", 2) : new String[]{"", ""};
+        String firstName = nameParts.length > 0 ? nameParts[0] : "";
+        String lastName = nameParts.length > 1 ? nameParts[1] : "";
+        
+        return new AuthResponse(newAccessToken, refreshToken, user.getEmail(), user.getRole().name(), firstName, lastName);
+    }
+    
+    public ApiResponse createAdmin(CreateAdminRequest request, String currentUserEmail) {
+        // Find the current user (must be a super admin)
+        User currentUser = userRepository.findByEmail(currentUserEmail)
+                .orElseThrow(() -> new RuntimeException("Current user not found"));
+        
+        // Check if the current user is a super admin
+        if (!currentUser.isSuperAdmin()) {
+            return new ApiResponse(false, "Access denied. Only super admin can create new admins.");
+        }
+        
+        // Check if the email already exists
+        if (userRepository.existsByEmail(request.getEmail())) {
+            return new ApiResponse(false, "Email already exists");
+        }
+        
+        // Create new admin user
+        User newAdmin = new User();
+        newAdmin.setEmail(request.getEmail());
+        newAdmin.setPassword(passwordEncoder.encode(request.getPassword()));
+        newAdmin.setFullName(request.getFirstName() + " " + request.getLastName());
+        newAdmin.setRole(User.Role.ADMIN);
+        newAdmin.setVerified(true); // Admins are pre-verified
+        newAdmin.setSuperAdmin(false); // Regular admin, not super admin
+        
+        userRepository.save(newAdmin);
+        
+        return new ApiResponse(true, "Admin created successfully with email: " + request.getEmail());
     }
 }

@@ -33,6 +33,12 @@ public class User implements UserDetails {
     private String fullName;
 
     private String phone;
+    
+    @Column(length = 500)
+    private String address;
+    
+    @Column(name = "date_of_birth")
+    private LocalDateTime dateOfBirth;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -41,6 +47,15 @@ public class User implements UserDetails {
     private boolean isVerified = false;
     private String otp;
     private LocalDateTime otpGeneratedTime;
+    
+    @Column(name = "is_super_admin")
+    private boolean isSuperAdmin = false;
+    
+    @Column(length = 500)
+    private String refreshToken;
+    
+    @Column(name = "refresh_token_expiry")
+    private LocalDateTime refreshTokenExpiry;
 
     public enum Role {
         CUSTOMER,
@@ -114,6 +129,22 @@ public class User implements UserDetails {
     public void setPhone(String phone) {
         this.phone = phone;
     }
+    
+    public String getAddress() {
+        return address;
+    }
+    
+    public void setAddress(String address) {
+        this.address = address;
+    }
+    
+    public LocalDateTime getDateOfBirth() {
+        return dateOfBirth;
+    }
+    
+    public void setDateOfBirth(LocalDateTime dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
@@ -130,6 +161,14 @@ public class User implements UserDetails {
     public void setVerified(boolean verified) {
         isVerified = verified;
     }
+    
+    public boolean isSuperAdmin() {
+        return isSuperAdmin;
+    }
+    
+    public void setSuperAdmin(boolean superAdmin) {
+        isSuperAdmin = superAdmin;
+    }
 
     public String getOtp() {
         return otp;
@@ -145,6 +184,22 @@ public class User implements UserDetails {
 
     public void setOtpGeneratedTime(LocalDateTime otpGeneratedTime) {
         this.otpGeneratedTime = otpGeneratedTime;
+    }
+    
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+    
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+    
+    public LocalDateTime getRefreshTokenExpiry() {
+        return refreshTokenExpiry;
+    }
+    
+    public void setRefreshTokenExpiry(LocalDateTime refreshTokenExpiry) {
+        this.refreshTokenExpiry = refreshTokenExpiry;
     }
 
     // UserDetails interface methods

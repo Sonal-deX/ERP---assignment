@@ -32,8 +32,9 @@ public class DataSeeder implements CommandLineRunner {
             admin.setPassword(passwordEncoder.encode(adminPassword));
             admin.setRole(User.Role.ADMIN);
             admin.setVerified(true);
+            admin.setSuperAdmin(true); // Mark as super admin
             userRepository.save(admin);
-            System.out.println("Admin user created with email: " + adminEmail);
+            System.out.println("Super Admin user created with email: " + adminEmail);
         }
     }
 }

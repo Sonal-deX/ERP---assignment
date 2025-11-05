@@ -4,6 +4,7 @@ import com.servicecenter.service_center_management.dto.ApiResponse;
 import com.servicecenter.service_center_management.dto.AuthResponse;
 import com.servicecenter.service_center_management.dto.ForgotPasswordRequest;
 import com.servicecenter.service_center_management.dto.LoginRequest;
+import com.servicecenter.service_center_management.dto.RefreshTokenRequest;
 import com.servicecenter.service_center_management.dto.RegisterRequest;
 import com.servicecenter.service_center_management.dto.ResetPasswordRequest;
 import com.servicecenter.service_center_management.dto.VerifyOtpRequest;
@@ -56,8 +57,8 @@ public class AuthController {
     
     @PostMapping("/register")
     @Operation(
-        summary = "Register new user",
-        description = "Registers a new user as either CUSTOMER or ADMIN. For CUSTOMER, an OTP will be sent to the provided email for verification. ADMIN registration uses a predefined email."
+        summary = "Register new customer",
+        description = "Registers a new CUSTOMER user. An OTP will be sent to the provided email for verification. Customers can optionally provide phone number, address, and date of birth. Admin registration is not allowed through this endpoint."
     )
     @ApiResponses(value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -123,6 +124,33 @@ public class AuthController {
     public ResponseEntity<ApiResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         try {
             ApiResponse response = authService.resetPassword(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/refresh-token")
+    @Operation(
+        summary = "Refresh access token",
+        description = "Generates a new access token using a valid refresh token. The refresh token must not be expired."
+    )
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "200",
+            description = "New access token generated successfully",
+            content = @Content(schema = @Schema(implementation = AuthResponse.class))
+        ),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "400",
+            description = "Invalid or expired refresh token",
+            content = @Content(schema = @Schema(implementation = ApiResponse.class))
+        )
+    })
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        try {
+            AuthResponse response = authService.refreshAccessToken(request.getRefreshToken());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest()

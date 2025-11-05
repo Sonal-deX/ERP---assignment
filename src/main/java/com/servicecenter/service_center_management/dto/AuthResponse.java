@@ -8,6 +8,9 @@ public class AuthResponse {
     @Schema(description = "JWT authentication token", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
     private String token;
     
+    @Schema(description = "JWT refresh token", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
+    private String refreshToken;
+    
     @Schema(description = "User email address", example = "customer@example.com")
     private String email;
     
@@ -20,8 +23,9 @@ public class AuthResponse {
     @Schema(description = "User's last name", example = "Doe")
     private String lastName;
     
-    public AuthResponse(String token, String email, String role, String firstName, String lastName) {
+    public AuthResponse(String token, String refreshToken, String email, String role, String firstName, String lastName) {
         this.token = token;
+        this.refreshToken = refreshToken;
         this.email = email;
         this.role = role;
         this.firstName = firstName;
@@ -31,6 +35,9 @@ public class AuthResponse {
     // Getters and Setters
     public String getToken() { return token; }
     public void setToken(String token) { this.token = token; }
+    
+    public String getRefreshToken() { return refreshToken; }
+    public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
     
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }

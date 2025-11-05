@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDateTime;
+
 @Schema(description = "User registration request")
 public class RegisterRequest {
     
@@ -29,6 +31,15 @@ public class RegisterRequest {
     @Schema(description = "User role (ADMIN or CUSTOMER)", example = "CUSTOMER", required = true)
     private String role; // ADMIN or CUSTOMER
     
+    @Schema(description = "Customer's phone number (optional for CUSTOMER)", example = "+1234567890")
+    private String phone;
+    
+    @Schema(description = "Customer's address (optional for CUSTOMER)", example = "123 Main St, City, State 12345")
+    private String address;
+    
+    @Schema(description = "Customer's date of birth (optional for CUSTOMER)", example = "1990-01-15T00:00:00")
+    private LocalDateTime dateOfBirth;
+    
     // Getters and Setters
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
@@ -44,4 +55,13 @@ public class RegisterRequest {
     
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+    
+    public LocalDateTime getDateOfBirth() { return dateOfBirth; }
+    public void setDateOfBirth(LocalDateTime dateOfBirth) { this.dateOfBirth = dateOfBirth; }
 }
