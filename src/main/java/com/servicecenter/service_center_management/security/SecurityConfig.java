@@ -69,6 +69,7 @@ public class SecurityConfig {
         org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
         config.setAllowCredentials(true);
         config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOrigin("http://16.16.100.11:30000");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
 
