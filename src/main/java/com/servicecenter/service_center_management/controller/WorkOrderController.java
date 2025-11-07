@@ -32,32 +32,18 @@ public class WorkOrderController {
     private WorkOrderService workOrderService;
 
     @GetMapping("/available")
-    @Operation(
-        summary = "Get unassigned work orders",
-        description = "**Authentication Required:** Bearer JWT token (EMPLOYEE role only). Retrieves all unassigned work orders available for assignment."
-    )
+    @Operation(summary = "Get unassigned work orders", description = "**Authentication Required:** Bearer JWT token (EMPLOYEE role only). Retrieves all unassigned work orders available for assignment.")
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Work orders retrieved successfully",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "403",
-            description = "Access denied - Only employees can view available work orders",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized - Invalid or missing token",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Work orders retrieved successfully", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Only employees can view available work orders", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - Invalid or missing token", content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     public ResponseEntity<ApiResponse<List<WorkOrderResponse>>> getAvailableWorkOrders(Authentication authentication) {
         try {
             String userEmail = authentication.getName();
             List<WorkOrderResponse> workOrders = workOrderService.getAvailableWorkOrders(userEmail);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Available work orders retrieved successfully", workOrders));
+            return ResponseEntity
+                    .ok(new ApiResponse<>(true, "Available work orders retrieved successfully", workOrders));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiResponse<>(false, e.getMessage(), null));
@@ -68,36 +54,13 @@ public class WorkOrderController {
     }
 
     @PutMapping("/{id}/assign")
-    @Operation(
-        summary = "Self-assign to a work order",
-        description = "**Authentication Required:** Bearer JWT token (EMPLOYEE role only). Allows employee to assign themselves to an unassigned work order."
-    )
+    @Operation(summary = "Self-assign to a work order", description = "**Authentication Required:** Bearer JWT token (EMPLOYEE role only). Allows employee to assign themselves to an unassigned work order.")
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Work order assigned successfully",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "400",
-            description = "Work order is not available for assignment",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "403",
-            description = "Access denied - Only employees can assign work orders",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "404",
-            description = "Work order not found",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized - Invalid or missing token",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Work order assigned successfully", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Work order is not available for assignment", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Only employees can assign work orders", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Work order not found", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - Invalid or missing token", content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     public ResponseEntity<ApiResponse<WorkOrderResponse>> assignWorkOrder(
             @PathVariable Long id,
@@ -123,34 +86,30 @@ public class WorkOrderController {
     }
 
     @GetMapping("/my-assigned")
-    @Operation(
-        summary = "Get employee's assigned work orders",
-        description = "**Authentication Required:** Bearer JWT token (EMPLOYEE role only). Retrieves all work orders assigned to the authenticated employee."
-    )
-    @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Assigned work orders retrieved successfully",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "403",
-            description = "Access denied - Only employees can view assigned work orders",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized - Invalid or missing token",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        )
-    })
-    public ResponseEntity<ApiResponse<List<WorkOrderResponse>>> getMyAssignedWorkOrders(Authentication authentication) {
+    @Operation(summary = "Get employee's assigned work orders", description = "**Authentication Required:** Bearer JWT token (EMPLOYEE role only). "
+            +
+            "Retrieves all work orders assigned to the authenticated employee. " +
+            "Supports optional `status`, `type`, and `filterToday`.")
+    public ResponseEntity<ApiResponse<List<WorkOrderResponse>>> getMyAssignedWorkOrders(
+            Authentication authentication,
+            @RequestParam(required = false) String status, // IN_PROGRESS, COMPLETED, UNASSIGNED
+            @RequestParam(required = false, defaultValue = "false") boolean filterToday,
+            @RequestParam(required = false) String type // SERVICE or PROJECT
+    ) {
         try {
             String userEmail = authentication.getName();
-            List<WorkOrderResponse> workOrders = workOrderService.getMyAssignedWorkOrders(userEmail);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Assigned work orders retrieved successfully", workOrders));
+            List<WorkOrderResponse> workOrders = workOrderService.getMyAssignedWorkOrders(
+                    userEmail,
+                    status,
+                    filterToday,
+                    type);
+            return ResponseEntity.ok(
+                    new ApiResponse<>(true, "Assigned work orders retrieved successfully", workOrders));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>(false, e.getMessage(), null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -159,36 +118,13 @@ public class WorkOrderController {
     }
 
     @PutMapping("/{id}/status")
-    @Operation(
-        summary = "Update work order status",
-        description = "**Authentication Required:** Bearer JWT token (EMPLOYEE role only). Updates the status of a work order assigned to the authenticated employee."
-    )
+    @Operation(summary = "Update work order status", description = "**Authentication Required:** Bearer JWT token (EMPLOYEE role only). Updates the status of a work order assigned to the authenticated employee.")
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Work order status updated successfully",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "400",
-            description = "Invalid status value",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "403",
-            description = "Access denied - Can only update work orders assigned to you",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "404",
-            description = "Work order not found",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized - Invalid or missing token",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Work order status updated successfully", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid status value", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Can only update work orders assigned to you", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Work order not found", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - Invalid or missing token", content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     public ResponseEntity<ApiResponse<WorkOrderResponse>> updateWorkOrderStatus(
             @PathVariable Long id,
@@ -215,36 +151,13 @@ public class WorkOrderController {
     }
 
     @PutMapping("/{id}/progress")
-    @Operation(
-        summary = "Update work order progress",
-        description = "**Authentication Required:** Bearer JWT token (EMPLOYEE role only). Updates the progress percentage and status message of a work order assigned to the authenticated employee."
-    )
+    @Operation(summary = "Update work order progress", description = "**Authentication Required:** Bearer JWT token (EMPLOYEE role only). Updates the progress percentage and status message of a work order assigned to the authenticated employee.")
     @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Work order progress updated successfully",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "400",
-            description = "Invalid input or cannot update completed work order",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "403",
-            description = "Access denied - Can only update work orders assigned to you",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "404",
-            description = "Work order not found",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized - Invalid or missing token",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        )
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Work order progress updated successfully", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input or cannot update completed work order", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Access denied - Can only update work orders assigned to you", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Work order not found", content = @Content(schema = @Schema(implementation = ApiResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Unauthorized - Invalid or missing token", content = @Content(schema = @Schema(implementation = ApiResponse.class)))
     })
     public ResponseEntity<ApiResponse<WorkOrderResponse>> updateWorkOrderProgress(
             @PathVariable Long id,
@@ -269,7 +182,7 @@ public class WorkOrderController {
                     .body(new ApiResponse<>(false, e.getMessage(), null));
         }
     }
-    
+
     @GetMapping("/my-assigned/summary")
     @Operation(summary = "Get today's work order summary", description = "Returns count of total, in-progress, and completed work orders for today for the authenticated employee.")
     public ResponseEntity<ApiResponse<WorkOrderSummaryResponse>> getTodayWorkOrderSummary(

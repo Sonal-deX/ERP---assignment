@@ -78,7 +78,12 @@ public class WorkOrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<WorkOrderResponse> getMyAssignedWorkOrders(String userEmail) {
+    public List<WorkOrderResponse> getMyAssignedWorkOrders(
+            String userEmail,
+            String status, // IN_PROGRESS, COMPLETED, UNASSIGNED
+            boolean filterToday,
+            String type // SERVICE or PROJECT
+    ) {
         User employee = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -87,13 +92,53 @@ public class WorkOrderService {
         }
 
         List<WorkOrder> workOrders = workOrderRepository.findByAssignedEmployeeId(employee.getId());
+
+        if (status != null && !status.isEmpty()) {
+            WorkOrder.WorkOrderStatus filterStatus;
+            try {
+                filterStatus = WorkOrder.WorkOrderStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Invalid status value: " + status);
+            }
+
+            workOrders = workOrders.stream()
+                    .filter(wo -> wo.getStatus() == filterStatus)
+                    .collect(Collectors.toList());
+        }
+
+        if (type != null && !type.isEmpty()) {
+            WorkOrder.WorkOrderType filterType;
+            try {
+                filterType = WorkOrder.WorkOrderType.valueOf(type.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Invalid type value: " + type);
+            }
+
+            workOrders = workOrders.stream()
+                    .filter(wo -> wo.getType() == filterType)
+                    .collect(Collectors.toList());
+        }
+
+        if (filterToday) {
+            LocalDate today = LocalDate.now();
+            LocalDateTime startOfDay = today.atStartOfDay();
+            LocalDateTime endOfDay = today.atTime(23, 59, 59);
+
+            workOrders = workOrders.stream()
+                    .filter(wo -> wo.getEstimatedCompletion() != null &&
+                            !wo.getEstimatedCompletion().isBefore(startOfDay) &&
+                            !wo.getEstimatedCompletion().isAfter(endOfDay))
+                    .collect(Collectors.toList());
+        }
+
         return workOrders.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public WorkOrderResponse updateWorkOrderStatus(Long workOrderId, UpdateWorkOrderStatusRequest request, String userEmail) {
+    public WorkOrderResponse updateWorkOrderStatus(Long workOrderId, UpdateWorkOrderStatusRequest request,
+            String userEmail) {
         User employee = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -104,7 +149,8 @@ public class WorkOrderService {
         WorkOrder workOrder = workOrderRepository.findById(workOrderId)
                 .orElseThrow(() -> new RuntimeException("Work order not found"));
 
-        if (workOrder.getAssignedEmployee() == null || !workOrder.getAssignedEmployee().getId().equals(employee.getId())) {
+        if (workOrder.getAssignedEmployee() == null
+                || !workOrder.getAssignedEmployee().getId().equals(employee.getId())) {
             throw new AccessDeniedException("You can only update work orders assigned to you");
         }
 
@@ -125,7 +171,8 @@ public class WorkOrderService {
     }
 
     @Transactional
-    public WorkOrderResponse updateWorkOrderProgress(Long workOrderId, UpdateWorkOrderProgressRequest request, String userEmail) {
+    public WorkOrderResponse updateWorkOrderProgress(Long workOrderId, UpdateWorkOrderProgressRequest request,
+            String userEmail) {
         User employee = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -136,7 +183,8 @@ public class WorkOrderService {
         WorkOrder workOrder = workOrderRepository.findById(workOrderId)
                 .orElseThrow(() -> new RuntimeException("Work order not found"));
 
-        if (workOrder.getAssignedEmployee() == null || !workOrder.getAssignedEmployee().getId().equals(employee.getId())) {
+        if (workOrder.getAssignedEmployee() == null
+                || !workOrder.getAssignedEmployee().getId().equals(employee.getId())) {
             throw new AccessDeniedException("You can only update work orders assigned to you");
         }
 
@@ -156,7 +204,7 @@ public class WorkOrderService {
     private WorkOrderResponse convertToResponse(WorkOrder workOrder) {
         WorkOrderResponse response = new WorkOrderResponse();
         response.setId(workOrder.getId());
-        
+
         if (workOrder.getAppointment() != null) {
             response.setAppointmentId(workOrder.getAppointment().getId());
         }
@@ -303,7 +351,8 @@ public class WorkOrderService {
         }
 
         WorkOrder workOrder = workOrderRepository.findByIdAndCustomerId(workOrderId, customer.getId())
-                .orElseThrow(() -> new RuntimeException("Work order not found or you don't have permission to view it"));
+                .orElseThrow(
+                        () -> new RuntimeException("Work order not found or you don't have permission to view it"));
 
         return convertToResponse(workOrder);
     }
