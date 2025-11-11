@@ -29,9 +29,9 @@ public class VehicleService {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Verify user is a customer
-        if (customer.getRole() != User.Role.CUSTOMER) {
-            throw new AccessDeniedException("Only customers can add vehicles");
+        // Verify user is a customer or admin
+        if (customer.getRole() != User.Role.CUSTOMER && customer.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only customers and admins can add vehicles");
         }
 
         // Check if license plate already exists
@@ -60,9 +60,9 @@ public class VehicleService {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Verify user is a customer
-        if (customer.getRole() != User.Role.CUSTOMER) {
-            throw new AccessDeniedException("Only customers can view their vehicles");
+        // Verify user is a customer or admin
+        if (customer.getRole() != User.Role.CUSTOMER && customer.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only customers and admins can view vehicles");
         }
 
         // Get vehicles for this customer
@@ -78,9 +78,9 @@ public class VehicleService {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Verify user is a customer
-        if (customer.getRole() != User.Role.CUSTOMER) {
-            throw new AccessDeniedException("Only customers can update vehicles");
+        // Verify user is a customer or admin
+        if (customer.getRole() != User.Role.CUSTOMER && customer.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only customers and admins can update vehicles");
         }
 
         // Get vehicle and verify ownership
@@ -113,9 +113,9 @@ public class VehicleService {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Verify user is a customer
-        if (customer.getRole() != User.Role.CUSTOMER) {
-            throw new AccessDeniedException("Only customers can delete vehicles");
+        // Verify user is a customer or admin
+        if (customer.getRole() != User.Role.CUSTOMER && customer.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only customers and admins can delete vehicles");
         }
 
         // Get vehicle and verify ownership

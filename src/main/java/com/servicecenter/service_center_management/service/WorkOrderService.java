@@ -43,8 +43,8 @@ public class WorkOrderService {
         User employee = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (employee.getRole() != User.Role.EMPLOYEE) {
-            throw new AccessDeniedException("Only employees can view available work orders");
+        if (employee.getRole() != User.Role.EMPLOYEE && employee.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only employees and admins can view available work orders");
         }
 
         List<WorkOrder> workOrders = workOrderRepository.findByStatus(WorkOrder.WorkOrderStatus.UNASSIGNED);
@@ -58,8 +58,8 @@ public class WorkOrderService {
         User employee = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (employee.getRole() != User.Role.EMPLOYEE) {
-            throw new AccessDeniedException("Only employees can assign work orders");
+        if (employee.getRole() != User.Role.EMPLOYEE && employee.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only employees and admins can assign work orders");
         }
 
         WorkOrder workOrder = workOrderRepository.findById(workOrderId)
@@ -87,8 +87,8 @@ public class WorkOrderService {
         User employee = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (employee.getRole() != User.Role.EMPLOYEE) {
-            throw new AccessDeniedException("Only employees can view assigned work orders");
+        if (employee.getRole() != User.Role.EMPLOYEE && employee.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only employees and admins can view assigned work orders");
         }
 
         List<WorkOrder> workOrders = workOrderRepository.findByAssignedEmployeeId(employee.getId());
@@ -142,8 +142,8 @@ public class WorkOrderService {
         User employee = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (employee.getRole() != User.Role.EMPLOYEE) {
-            throw new AccessDeniedException("Only employees can update work order status");
+        if (employee.getRole() != User.Role.EMPLOYEE && employee.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only employees and admins can update work order status");
         }
 
         WorkOrder workOrder = workOrderRepository.findById(workOrderId)
@@ -176,8 +176,8 @@ public class WorkOrderService {
         User employee = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (employee.getRole() != User.Role.EMPLOYEE) {
-            throw new AccessDeniedException("Only employees can update work order progress");
+        if (employee.getRole() != User.Role.EMPLOYEE && employee.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only employees and admins can update work order progress");
         }
 
         WorkOrder workOrder = workOrderRepository.findById(workOrderId)
@@ -248,8 +248,8 @@ public class WorkOrderService {
         User employee = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (employee.getRole() != User.Role.EMPLOYEE) {
-            throw new AccessDeniedException("Only employees can view assigned work orders");
+        if (employee.getRole() != User.Role.EMPLOYEE && employee.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only employees and admins can view assigned work orders");
         }
 
         LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
@@ -285,8 +285,8 @@ public class WorkOrderService {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (customer.getRole() != User.Role.CUSTOMER) {
-            throw new AccessDeniedException("Only customers can create work orders");
+        if (customer.getRole() != User.Role.CUSTOMER && customer.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only customers and admins can create work orders");
         }
 
         Vehicle vehicle = vehicleRepository.findByIdAndCustomerId(request.getVehicleId(), customer.getId())
@@ -331,8 +331,8 @@ public class WorkOrderService {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (customer.getRole() != User.Role.CUSTOMER) {
-            throw new AccessDeniedException("Only customers can view their work orders");
+        if (customer.getRole() != User.Role.CUSTOMER && customer.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only customers and admins can view their work orders");
         }
 
         List<WorkOrder> workOrders = workOrderRepository.findByCustomerId(customer.getId());
@@ -346,8 +346,8 @@ public class WorkOrderService {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (customer.getRole() != User.Role.CUSTOMER) {
-            throw new AccessDeniedException("Only customers can view work order details");
+        if (customer.getRole() != User.Role.CUSTOMER && customer.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only customers and admins can view work order details");
         }
 
         WorkOrder workOrder = workOrderRepository.findByIdAndCustomerId(workOrderId, customer.getId())

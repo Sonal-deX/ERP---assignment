@@ -33,8 +33,8 @@ public class AppointmentService {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (customer.getRole() != User.Role.CUSTOMER) {
-            throw new AccessDeniedException("Only customers can book appointments");
+        if (customer.getRole() != User.Role.CUSTOMER && customer.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only customers and admins can book appointments");
         }
 
         Vehicle vehicle = vehicleRepository.findByIdAndCustomerId(request.getVehicleId(), customer.getId())
@@ -55,8 +55,8 @@ public class AppointmentService {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (customer.getRole() != User.Role.CUSTOMER) {
-            throw new AccessDeniedException("Only customers can view appointments");
+        if (customer.getRole() != User.Role.CUSTOMER && customer.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only customers and admins can view appointments");
         }
 
         List<Appointment> appointments = appointmentRepository.findByCustomerId(customer.getId());
@@ -70,8 +70,8 @@ public class AppointmentService {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (customer.getRole() != User.Role.CUSTOMER) {
-            throw new AccessDeniedException("Only customers can update appointments");
+        if (customer.getRole() != User.Role.CUSTOMER && customer.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only customers and admins can update appointments");
         }
 
         Appointment appointment = appointmentRepository.findByIdAndCustomerId(appointmentId, customer.getId())
@@ -96,8 +96,8 @@ public class AppointmentService {
         User customer = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (customer.getRole() != User.Role.CUSTOMER) {
-            throw new AccessDeniedException("Only customers can cancel appointments");
+        if (customer.getRole() != User.Role.CUSTOMER && customer.getRole() != User.Role.ADMIN) {
+            throw new AccessDeniedException("Only customers and admins can cancel appointments");
         }
 
         Appointment appointment = appointmentRepository.findByIdAndCustomerId(appointmentId, customer.getId())
