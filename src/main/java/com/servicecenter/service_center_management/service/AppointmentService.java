@@ -59,7 +59,14 @@ public class AppointmentService {
             throw new AccessDeniedException("Only customers and admins can view appointments");
         }
 
-        List<Appointment> appointments = appointmentRepository.findByCustomerId(customer.getId());
+        List<Appointment> appointments;
+        if (customer.getRole() == User.Role.ADMIN) {
+            // Admins can see all appointments
+            appointments = appointmentRepository.findAll();
+        } else {
+            // Customers see only their own appointments
+            appointments = appointmentRepository.findByCustomerId(customer.getId());
+        }
         return appointments.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());

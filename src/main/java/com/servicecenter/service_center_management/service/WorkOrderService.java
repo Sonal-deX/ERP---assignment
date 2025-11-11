@@ -91,7 +91,14 @@ public class WorkOrderService {
             throw new AccessDeniedException("Only employees and admins can view assigned work orders");
         }
 
-        List<WorkOrder> workOrders = workOrderRepository.findByAssignedEmployeeId(employee.getId());
+        List<WorkOrder> workOrders;
+        if (employee.getRole() == User.Role.ADMIN) {
+            // Admins can see all work orders
+            workOrders = workOrderRepository.findAll();
+        } else {
+            // Employees see only their assigned work orders
+            workOrders = workOrderRepository.findByAssignedEmployeeId(employee.getId());
+        }
 
         if (status != null && !status.isEmpty()) {
             WorkOrder.WorkOrderStatus filterStatus;
@@ -335,7 +342,14 @@ public class WorkOrderService {
             throw new AccessDeniedException("Only customers and admins can view their work orders");
         }
 
-        List<WorkOrder> workOrders = workOrderRepository.findByCustomerId(customer.getId());
+        List<WorkOrder> workOrders;
+        if (customer.getRole() == User.Role.ADMIN) {
+            // Admins can see all customer work orders
+            workOrders = workOrderRepository.findAll();
+        } else {
+            // Customers see only their own work orders
+            workOrders = workOrderRepository.findByCustomerId(customer.getId());
+        }
         return workOrders.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());

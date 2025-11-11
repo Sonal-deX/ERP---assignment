@@ -65,8 +65,15 @@ public class VehicleService {
             throw new AccessDeniedException("Only customers and admins can view vehicles");
         }
 
-        // Get vehicles for this customer
-        List<Vehicle> vehicles = vehicleRepository.findByCustomerId(customer.getId());
+        // Get vehicles
+        List<Vehicle> vehicles;
+        if (customer.getRole() == User.Role.ADMIN) {
+            // Admins can see all vehicles
+            vehicles = vehicleRepository.findAll();
+        } else {
+            // Customers see only their own vehicles
+            vehicles = vehicleRepository.findByCustomerId(customer.getId());
+        }
         return vehicles.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
