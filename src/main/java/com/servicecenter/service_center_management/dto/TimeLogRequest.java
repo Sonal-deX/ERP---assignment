@@ -22,6 +22,9 @@ public class TimeLogRequest {
     @Schema(description = "Notes about the work performed", example = "Completed oil change and filter replacement")
     private String notes;
 
+    @Schema(description = "Employee id (when authentication is not used)")
+    private Long employeeId;
+
     public TimeLogRequest() {
     }
 
@@ -62,5 +65,13 @@ public class TimeLogRequest {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Long getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(Long employeeId) {
+        this.employeeId = employeeId;
     }
 }

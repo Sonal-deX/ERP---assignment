@@ -93,14 +93,15 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
-                                "/api/employee/part-requests/**"
+                                "/api/employee/part-requests/**",
+                                "/api/time-logs-new/**"
                         ).permitAll()
 
                         // Role-based protected endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/customer/**").hasRole("CUSTOMER")
                         .requestMatchers("/api/work-orders/**").hasRole("EMPLOYEE")
-                        .requestMatchers("/api/time-logs/**").hasRole("EMPLOYEE")
+                        .requestMatchers("/api/time-logs/**").permitAll()
 
                         // Everything else requires authentication
                         .anyRequest().authenticated()

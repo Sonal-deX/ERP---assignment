@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,8 +31,8 @@ public class TimeLogService {
     private UserRepository userRepository;
 
     @Transactional
-    public TimeLogResponse logTime(TimeLogRequest request, String userEmail) {
-        User employee = userRepository.findByEmail(userEmail)
+    public TimeLogResponse logTime(TimeLogRequest request, Long employeeId) {
+        User employee = userRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         WorkOrder workOrder = workOrderRepository.findById(request.getWorkOrderId())
@@ -54,8 +55,15 @@ public class TimeLogService {
         return convertToResponse(savedTimeLog);
     }
 
-    public List<TimeLogResponse> getTimeLogsForWorkOrder(Long workOrderId, String userEmail) {
-        User employee = userRepository.findByEmail(userEmail)
+    // New overload - accept user email (from Authentication)
+    @Transactional
+    public TimeLogResponse logTime(TimeLogRequest request, String userEmail) {
+        User user = userRepository.findByEmail(userEmail).orElseThrow(() -> new RuntimeException("User not found: " + userEmail));
+        return logTime(request, user.getId());
+    }
+
+    public List<TimeLogResponse> getTimeLogsForWorkOrder(Long workOrderId, Long employeeId) {
+        User employee = userRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         WorkOrder workOrder = workOrderRepository.findById(workOrderId)
@@ -73,9 +81,15 @@ public class TimeLogService {
                 .collect(Collectors.toList());
     }
 
+    // New overload - accept user email
+    public List<TimeLogResponse> getTimeLogsForWorkOrder(Long workOrderId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail).orElseThrow(() -> new RuntimeException("User not found: " + userEmail));
+        return getTimeLogsForWorkOrder(workOrderId, user.getId());
+    }
+
     @Transactional
-    public TimeLogResponse updateTimeLog(Long timeLogId, TimeLogRequest request, String userEmail) {
-        User employee = userRepository.findByEmail(userEmail)
+    public TimeLogResponse updateTimeLog(Long timeLogId, TimeLogRequest request, Long employeeId) {
+        User employee = userRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         TimeLog timeLog = timeLogRepository.findById(timeLogId)
@@ -95,9 +109,16 @@ public class TimeLogService {
         return convertToResponse(updatedTimeLog);
     }
 
+    // New overload
     @Transactional
-    public void deleteTimeLog(Long timeLogId, String userEmail) {
-        User employee = userRepository.findByEmail(userEmail)
+    public TimeLogResponse updateTimeLog(Long timeLogId, TimeLogRequest request, String userEmail) {
+        User user = userRepository.findByEmail(userEmail).orElseThrow(() -> new RuntimeException("User not found: " + userEmail));
+        return updateTimeLog(timeLogId, request, user.getId());
+    }
+
+    @Transactional
+    public void deleteTimeLog(Long timeLogId, Long employeeId) {
+        User employee = userRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
 
         TimeLog timeLog = timeLogRepository.findById(timeLogId)
@@ -110,6 +131,13 @@ public class TimeLogService {
         }
 
         timeLogRepository.delete(timeLog);
+    }
+
+    // New overload
+    @Transactional
+    public void deleteTimeLog(Long timeLogId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail).orElseThrow(() -> new RuntimeException("User not found: " + userEmail));
+        deleteTimeLog(timeLogId, user.getId());
     }
 
     private TimeLogResponse convertToResponse(TimeLog timeLog) {
