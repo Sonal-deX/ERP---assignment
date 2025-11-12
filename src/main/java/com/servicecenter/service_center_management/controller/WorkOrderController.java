@@ -4,6 +4,7 @@ import com.servicecenter.service_center_management.dto.ApiResponse;
 import com.servicecenter.service_center_management.dto.UpdateWorkOrderProgressRequest;
 import com.servicecenter.service_center_management.dto.UpdateWorkOrderStatusRequest;
 import com.servicecenter.service_center_management.dto.WorkOrderResponse;
+import com.servicecenter.service_center_management.dto.WorkOrderSummaryResponse;
 import com.servicecenter.service_center_management.service.WorkOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -122,34 +123,30 @@ public class WorkOrderController {
     }
 
     @GetMapping("/my-assigned")
-    @Operation(
-        summary = "Get employee's assigned work orders",
-        description = "**Authentication Required:** Bearer JWT token (EMPLOYEE role only). Retrieves all work orders assigned to the authenticated employee."
-    )
-    @ApiResponses(value = {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Assigned work orders retrieved successfully",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "403",
-            description = "Access denied - Only employees can view assigned work orders",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized - Invalid or missing token",
-            content = @Content(schema = @Schema(implementation = ApiResponse.class))
-        )
-    })
-    public ResponseEntity<ApiResponse<List<WorkOrderResponse>>> getMyAssignedWorkOrders(Authentication authentication) {
+    @Operation(summary = "Get employee's assigned work orders", description = "**Authentication Required:** Bearer JWT token (EMPLOYEE role only). "
+            +
+            "Retrieves all work orders assigned to the authenticated employee. " +
+            "Supports optional `status`, `type`, and `filterToday`.")
+    public ResponseEntity<ApiResponse<List<WorkOrderResponse>>> getMyAssignedWorkOrders(
+            Authentication authentication,
+            @RequestParam(required = false) String status, // IN_PROGRESS, COMPLETED, UNASSIGNED
+            @RequestParam(required = false, defaultValue = "false") boolean filterToday,
+            @RequestParam(required = false) String type // SERVICE or PROJECT
+    ) {
         try {
             String userEmail = authentication.getName();
-            List<WorkOrderResponse> workOrders = workOrderService.getMyAssignedWorkOrders(userEmail);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Assigned work orders retrieved successfully", workOrders));
+            List<WorkOrderResponse> workOrders = workOrderService.getMyAssignedWorkOrders(
+                    userEmail,
+                    status,
+                    filterToday,
+                    type);
+            return ResponseEntity.ok(
+                    new ApiResponse<>(true, "Assigned work orders retrieved successfully", workOrders));
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>(false, e.getMessage(), null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -262,6 +259,24 @@ public class WorkOrderController {
                         .body(new ApiResponse<>(false, e.getMessage(), null));
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/my-assigned/summary")
+    @Operation(summary = "Get today's work order summary", description = "Returns count of total, in-progress, and completed work orders for today for the authenticated employee.")
+    public ResponseEntity<ApiResponse<WorkOrderSummaryResponse>> getTodayWorkOrderSummary(
+            Authentication authentication) {
+        try {
+            String userEmail = authentication.getName();
+            WorkOrderSummaryResponse summary = workOrderService.getTodayWorkOrderSummary(userEmail);
+            return ResponseEntity
+                    .ok(new ApiResponse<>(true, "Today's work order summary retrieved successfully", summary));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiResponse<>(false, e.getMessage(), null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

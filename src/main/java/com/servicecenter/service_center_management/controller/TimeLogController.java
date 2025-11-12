@@ -4,6 +4,7 @@ import com.servicecenter.service_center_management.dto.ApiResponse;
 import com.servicecenter.service_center_management.dto.TimeLogRequest;
 import com.servicecenter.service_center_management.dto.TimeLogResponse;
 import com.servicecenter.service_center_management.service.TimeLogService;
+import org.springframework.security.core.Authentication;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -57,6 +58,14 @@ public class TimeLogController {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(false, e.getMessage(), null));
         }
+    }
+
+    @GetMapping("/today/hours")
+    @Operation(summary = "Get total hours logged today", description = "Get the total work hours logged today by the authenticated employee.")
+    public ResponseEntity<ApiResponse> getTodayTotalHours(Authentication authentication) {
+        String userEmail = authentication.getName();
+        Double totalHours = timeLogService.getTodayTotalHours(userEmail);
+        return ResponseEntity.ok(new ApiResponse(true, "Today's total hours retrieved successfully", totalHours));
     }
 
     @PutMapping("/{id}")
